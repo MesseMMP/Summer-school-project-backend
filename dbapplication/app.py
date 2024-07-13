@@ -12,11 +12,16 @@ def register():
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
+    is_admin = data.get('isAdmin', False)
+    admin_secret = data.get('adminSecret', '')
 
     if User.query.filter_by(username=username).first() or User.query.filter_by(email=email).first():
         return jsonify({'message': 'User already exists'}), 400
 
-    user = User(username=username, email=email)
+    if is_admin and admin_secret != app.config['ADMIN_SECRET']:
+        return jsonify({'message': 'Invalid admin secret'}), 403
+
+    user = User(username=username, email=email, is_admin=is_admin)
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
