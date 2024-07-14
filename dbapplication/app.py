@@ -94,6 +94,35 @@ def get_username(user_id):
         return jsonify({'username': 'Unknown'}), 200
 
 
+@app.route('/check-admin', methods=['GET'])
+@jwt_required(optional=True)
+def check_admin():
+    user_id = get_jwt_identity()
+    user = User.query.filter_by(id=user_id).first()
+    if user and user.is_admin:
+        return jsonify({'isAdmin': 'true'}), 200
+    else:
+        return jsonify({'isAdmin': 'false'}), 200
+
+
+@app.route('/delete-joke/<int:joke_id>', methods=['DELETE'])
+@jwt_required()
+def delete_joke(joke_id):
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+
+    if not user.is_admin:
+        return jsonify({'message': 'Access denied'}), 403
+
+    joke = Joke.query.get(joke_id)
+    if not joke:
+        return jsonify({'message': 'Joke not found'}), 404
+
+    db.session.delete(joke)
+    db.session.commit()
+    return jsonify({'message': 'Joke deleted successfully'}), 200
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
