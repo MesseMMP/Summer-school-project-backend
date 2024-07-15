@@ -1,7 +1,7 @@
 from flask import request, jsonify
 
 from config import app, db
-from models import User, Joke
+from models import User, Joke, Like
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from datetime import datetime
 
@@ -121,6 +121,47 @@ def delete_joke(joke_id):
     db.session.delete(joke)
     db.session.commit()
     return jsonify({'message': 'Joke deleted successfully'}), 200
+
+
+@app.route('/like-post/<int:joke_id>', methods=['POST'])
+@jwt_required(optional=True)
+def add_like(joke_id):
+    current_user_id = get_jwt_identity()
+    if not current_user_id:
+        return jsonify({'message': 'You need to be signed in to like posts!'}), 401
+
+    like = Like.query.filter_by(user_id=current_user_id, joke_id=joke_id).first()
+    if like:
+        db.session.delete(like)
+        db.session.commit()
+        return jsonify({'message': 'Like removed successfully'}), 201
+    else:
+        new_like = Like(user_id=current_user_id, joke_id=joke_id)
+        db.session.add(new_like)
+        db.session.commit()
+        return jsonify({'message': 'Like added successfully'}), 201
+
+
+# Получение числа лайков для конкретного анекдота
+@app.route('/likes-for/<int:joke_id>', methods=['GET'])
+def get_likes_for_joke(joke_id):
+    joke = Joke.query.get(joke_id)
+    if not joke:
+        return jsonify({'message': 'Joke is not found'}), 404
+    likes_count = Like.query.filter_by(joke_id=joke_id).count()
+    return jsonify({'likes': likes_count})
+
+
+@app.route('/is-liked/<int:joke_id>', methods=['GET'])
+@jwt_required()
+def get_is_liked_for_joke(joke_id):
+    joke = Joke.query.get(joke_id)
+    current_user_id = get_jwt_identity()
+    like = Like.query.filter_by(user_id=current_user_id, joke_id=joke_id).first()
+    if joke and like:
+        return jsonify({'is_liked': 'true'}), 200
+    else:
+        return jsonify({'is_liked': 'false'}), 200
 
 
 if __name__ == '__main__':

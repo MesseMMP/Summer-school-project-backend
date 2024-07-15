@@ -15,4 +15,4 @@ app.config['ADMIN_SECRET'] = 'secretadmin'
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 db = SQLAlchemy(app)
-# migrate = Migrate(app, db)
+#migrate = Migrate(app, db)
