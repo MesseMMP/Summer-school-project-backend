@@ -61,13 +61,17 @@ def create_joke():
 
 @app.route('/jokes', methods=['GET'])
 def get_jokes():
+    def find_likes(joke_id):
+        return Like.query.filter_by(joke_id=joke_id).count()
+
     jokes = Joke.query.all()
     jokes_list = [{'id': joke.id,
                    'title': joke.title,
                    'text': joke.text,
                    'tags': joke.tags,
                    'userId': joke.user_id,
-                   'pub_date': joke.pub_date}
+                   'date': joke.pub_date,
+                   'likes': find_likes(joke.id)}
                   for joke in jokes]
 
     return jsonify({'jokes': jokes_list}), 200
@@ -142,16 +146,6 @@ def add_like(joke_id):
         return jsonify({'message': 'Like added successfully'}), 201
 
 
-# Получение числа лайков для конкретного анекдота
-@app.route('/likes-for/<int:joke_id>', methods=['GET'])
-def get_likes_for_joke(joke_id):
-    joke = Joke.query.get(joke_id)
-    if not joke:
-        return jsonify({'message': 'Joke is not found'}), 404
-    likes_count = Like.query.filter_by(joke_id=joke_id).count()
-    return jsonify({'likes': likes_count})
-
-
 @app.route('/is-liked/<int:joke_id>', methods=['GET'])
 @jwt_required()
 def get_is_liked_for_joke(joke_id):
@@ -162,6 +156,32 @@ def get_is_liked_for_joke(joke_id):
         return jsonify({'is_liked': 'true'}), 200
     else:
         return jsonify({'is_liked': 'false'}), 200
+
+
+@app.route('/top-jokes', methods=['GET'])
+def get_top_jokes():
+    def find_likes(joke_id):
+        return Like.query.filter_by(joke_id=joke_id).count()
+
+    top_jokes = (
+        db.session.query(Joke, db.func.count(Like.id).label('like_count'))
+        .outerjoin(Like, Joke.id == Like.joke_id)
+        .group_by(Joke.id)
+        .order_by(db.func.count(Like.id).desc())
+        .limit(10)
+        .all()
+    )
+
+    jokes_list = [{'id': joke.id,
+                   'title': joke.title,
+                   'text': joke.text,
+                   'tags': joke.tags,
+                   'userId': joke.user_id,
+                   'date': joke.pub_date,
+                   'likes': find_likes(joke.id)}
+                  for joke, like_count in top_jokes]
+
+    return jsonify({'jokes': jokes_list})
 
 
 if __name__ == '__main__':
