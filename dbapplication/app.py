@@ -16,17 +16,17 @@ def register():
     admin_secret = data.get('adminSecret', '')
 
     if User.query.filter_by(username=username).first() or User.query.filter_by(email=email).first():
-        return jsonify({'message': 'User already exists'}), 400
+        return jsonify({'message': 'User with same nickname or email already exists!'}), 400
 
     if is_admin and admin_secret != app.config['ADMIN_SECRET']:
-        return jsonify({'message': 'Invalid admin secret'}), 403
+        return jsonify({'message': 'Invalid admin secret!'}), 403
 
     user = User(username=username, email=email, is_admin=is_admin)
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
 
-    return jsonify({'message': 'User created successfully'}), 201
+    return jsonify({'message': 'Registration successful!'}), 201
 
 
 @app.route('/login', methods=['POST'])
@@ -41,7 +41,7 @@ def login():
         access_token = create_access_token(identity=user.id)
         return jsonify({'access_token': access_token}), 200
 
-    return jsonify({'message': 'Invalid credentials'}), 401
+    return jsonify({'message': 'Invalid credentials!'}), 401
 
 
 @app.route('/create-joke', methods=['POST'])
@@ -56,7 +56,7 @@ def create_joke():
     db.session.add(joke)
     db.session.commit()
 
-    return jsonify({'message': 'Joke created successfully'}), 201
+    return jsonify({'message': 'Joke created successfully!'}), 201
 
 
 @app.route('/jokes', methods=['GET'])
@@ -124,7 +124,7 @@ def delete_joke(joke_id):
 
     db.session.delete(joke)
     db.session.commit()
-    return jsonify({'message': 'Joke deleted successfully'}), 200
+    return jsonify({'message': 'Joke deleted successfully!'}), 200
 
 
 @app.route('/like-post/<int:joke_id>', methods=['POST'])
@@ -138,12 +138,12 @@ def add_like(joke_id):
     if like:
         db.session.delete(like)
         db.session.commit()
-        return jsonify({'message': 'Like removed successfully'}), 201
+        return jsonify({'message': 'Like removed successfully!'}), 201
     else:
         new_like = Like(user_id=current_user_id, joke_id=joke_id)
         db.session.add(new_like)
         db.session.commit()
-        return jsonify({'message': 'Like added successfully'}), 201
+        return jsonify({'message': 'Like added successfully!'}), 201
 
 
 @app.route('/is-liked/<int:joke_id>', methods=['GET'])
