@@ -64,7 +64,7 @@ def get_jokes():
     def find_likes(joke_id):
         return Like.query.filter_by(joke_id=joke_id).count()
 
-    jokes = Joke.query.all()
+    jokes = Joke.query.order_by(Joke.pub_date.desc()).all()
     jokes_list = [{'id': joke.id,
                    'title': joke.title,
                    'text': joke.text,
